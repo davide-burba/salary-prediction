@@ -1,60 +1,63 @@
 import pickle
 import numpy as np
+import pandas as pd
 from fastapi import FastAPI
 from pydantic import BaseModel
 import os
 
 
+class ModelByRegion:
+    def __init__(self,bst,scale = 34122.5775755):
+        self.bst = bst
+        self.scale = scale
+        # from https://www.statista.com/statistics/708972/average-annual-nominal-wages-of-employees-italy-by-region/
+        self.salary_by_region = dict(
+            Lombardia=31446,
+            Trentino=30786,
+            Lazio=30496,
+            Emilia=30273,
+            Liguria=30190,
+            Piemonte=29556,
+            Veneto=29286,
+            Friuli=29222,
+            Aosta=29202,
+            Toscana=28513,
+            Marche=27411,
+            Abruzzo=27039,
+            Campania=26904,
+            Umbria=26737,
+            Puglia=26410,
+            Molise=26263,
+            Sicilia=26133,
+            Sardegna=26042,
+            Calabria=25079,
+            Basilicata=24308,
+        )
+        
+    def predict(self,contract_time,category,region):
+        x = pd.DataFrame(dict(contract_time=[contract_time], category=[category]),dtype="category")
+        return (self.bst.predict(x) / self.scale) * self.salary_by_region[region]
+
+    
+class Data(BaseModel):
+    contract_time = "permanent"
+    category = "Accounting & Finance Jobs"
+    region = "Lombardia"
+
+    
 path = os.path.dirname(os.path.abspath(__file__)) + "/"
 app = FastAPI()
-model = pickle.load(open(path + "../exploration/model.p","rb"))
-features = pickle.load(open(path + "../exploration/features.p","rb"))
-
-
-class Data(BaseModel):
-    ContractTime_contract= False
-    ContractTime_permanent= False
-    Category_Accounting__Finance_Jobs= False
-    Category_Admin_Jobs= False
-    Category_Charity__Voluntary_Jobs= False
-    Category_Consultancy_Jobs= False
-    Category_Creative__Design_Jobs= False
-    Category_Customer_Services_Jobs= False
-    Category_Domestic_help__Cleaning_Jobs= False
-    Category_Energy__Oil__Gas_Jobs= False
-    Category_Engineering_Jobs= False
-    Category_Graduate_Jobs= False
-    Category_HR__Recruitment_Jobs= False
-    Category_Healthcare__Nursing_Jobs= False
-    Category_Hospitality__Catering_Jobs= False
-    Category_IT_Jobs= False
-    Category_Legal_Jobs= False
-    Category_Logistics__Warehouse_Jobs= False
-    Category_Maintenance_Jobs= False
-    Category_Manufacturing_Jobs= False
-    Category_Other_General_Jobs= False
-    Category_PR__Advertising__Marketing_Jobs= False
-    Category_Part_time_Jobs= False
-    Category_Property_Jobs= False
-    Category_Retail_Jobs= False
-    Category_Sales_Jobs= False
-    Category_Scientific__QA_Jobs= False
-    Category_Social_work_Jobs= False
-    Category_Teaching_Jobs= False
-    Category_Trade__Construction_Jobs= False
-    Category_Travel_Jobs= False
+features = pickle.load(open(path + "../models/features.p","rb"))
+bst = pickle.load(open(path + "../models/bst.p","rb"))
+model = ModelByRegion(bst)
 
 
 @app.post("/predict")
 def predict(data: Data):
-
-    #print("hello world")
-
+    
     data = data.dict()
 
-    #print(data)
-
-    to_predict = np.array([data[f] for f in features]).reshape(1,-1)
-    pred = model.predict(to_predict)
+    to_predict = [data[f] for f in features]
+    pred = model.predict(*to_predict)
 
     return {"prediction" : pred.item()}
