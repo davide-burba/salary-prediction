@@ -1,7 +1,12 @@
 import pickle
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
+from fastapi.responses import JSONResponse
+import asyncio
 from pydantic import BaseModel
 import os
 
@@ -33,31 +38,43 @@ class ModelByRegion:
             Calabria=25079,
             Basilicata=24308,
         )
-        
+
     def predict(self,contract_time,category,region):
         x = pd.DataFrame(dict(contract_time=[contract_time], category=[category]),dtype="category")
         return (self.bst.predict(x) / self.scale) * self.salary_by_region[region]
 
-    
+
 class Data(BaseModel):
     contract_time = "permanent"
     category = "Accounting & Finance Jobs"
     region = "Lombardia"
 
-    
+
 path = os.path.dirname(os.path.abspath(__file__)) + "/"
+
 app = FastAPI()
+app.mount("/static", StaticFiles(directory=path+"static"), name="static")
+
 features = pickle.load(open(path + "../models/features.p","rb"))
 bst = pickle.load(open(path + "../models/bst.p","rb"))
 model = ModelByRegion(bst)
 
 
-@app.post("/predict")
-def predict(data: Data):
-    
-    data = data.dict()
+@app.route('/')
+async def homepage(request):
+    html_file = Path(path + 'view/index.html')
+    return HTMLResponse(html_file.open().read())
 
-    to_predict = [data[f] for f in features]
+
+@app.route('/predict', methods=['POST'])
+async def predict(request):#data: Data):
+
+    tmp = await request.form()
+    data = {f : tmp[f] for f in features}
+
+    #img_bytes = await (img_data['file'].read())
+
+    to_predict = [data[f] for f in features]#["permanent","Engineering Jobs","Friuli"]#
     pred = model.predict(*to_predict)
 
-    return {"prediction" : pred.item()}
+    return JSONResponse({"prediction" : np.round(pred.item()),"monthly_prediction" : np.round(pred.item()/12)})
