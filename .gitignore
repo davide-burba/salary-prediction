@@ -2,9 +2,6 @@
 *.RData
 .DS_Store
 *.xlsx
-*.jpg
-*.jpeg
-*.png
 __pycache*
 *.swp
 *.swo
