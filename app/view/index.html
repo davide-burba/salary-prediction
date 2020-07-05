@@ -13,104 +13,102 @@
 <!-- BODY -->
 <body style="margin: 0">
   <div class='background'>
-    <div class="text">
-      <h1 style="font-size:55px">
-        Smart Salary Estimator - Italia
-      </h1>
-      <p style="font-size:20px"><i>
-        Scopri a quanto dovrebbe ammontare il tuo <strong>stipendio</strong>,<br>
-        con il nostro modello di <strong>AI</strong> per il mercato Italiano!
-      </i></p>
-
-      <br>
-
-      <p>
-      Tipo di contratto:
-      <SELECT id="contract_time">
-      <OPTION Value="contract" SELECTED>determinato</OPTION>
-      <OPTION Value="permanent">indeterminato</OPTION>
-      </SELECT>
-      </p>
-
-      <p>
-      Settore:
-
-      <SELECT id="category">
-      <OPTION Value="Accounting & Finance Jobs" SELECTED>Accounting & Finanza</OPTION>
-      <OPTION Value="Admin Jobs">Amministrazione</OPTION>
-      <OPTION Value="Charity & Voluntary Jobs">Volontariato</OPTION>
-      <OPTION Value="Creative & Design Jobs">Creatività & Design</OPTION>
-      <OPTION Value="Customer Services Jobs">Servizio clienti</OPTION>
-      <OPTION Value="Domestic help & Cleaning Jobs" SELECTED> Aiuto domestico & Pulizie </OPTION>
-      <OPTION Value="Energy, Oil & Gas Jobs"> Energia, Olio & Gas</OPTION>
-      <OPTION Value="Engineering Jobs">Ingegneria</OPTION>
-      <OPTION Value="Graduate Jobs">Graduate program</OPTION>
-      <OPTION Value="HR & Recruitment Jobs">Risorse Umane</OPTION>
-      <OPTION Value="Healthcare & Nursing Jobs" SELECTED> Infermeria </OPTION>
-      <OPTION Value="Hospitality & Catering Jobs"> Catering </OPTION>
-      <OPTION Value="IT Jobs"> Information Technology</OPTION>
-      <OPTION Value="Legal Jobs"> Legale </OPTION>
-      <OPTION Value="Logistics & Warehouse Jobs" SELECTED> Logistica </OPTION>
-      <OPTION Value="Maintenance Jobs"> Manutenzione </OPTION>
-      <OPTION Value="Manufacturing Jobs"> Manifatturiero </OPTION>
-      <OPTION Value="PR, Advertising & Marketing Jobs" SELECTED> Marketing </OPTION>
-      <OPTION Value="Part time Jobs">Part time</OPTION>
-      <OPTION Value="Property Jobs">Immobiliare</OPTION>
-      <OPTION Value="Retail Jobs">Al dettaglio (retail)</OPTION>
-      <OPTION Value="Sales Jobs">Vendite</OPTION>
-      <OPTION Value="Scientific & QA Jobs">Scientifico & Quality Assurance</OPTION>
-      <OPTION Value="Social work Jobs">Sociale</OPTION>
-      <OPTION Value="Teaching Jobs">Insegnamento</OPTION>
-      <OPTION Value="Trade & Construction Jobs"> Edile </OPTION>
-      <OPTION Value="Travel Jobs"> Viaggio </OPTION>
-      <OPTION Value="Other/General Jobs">Altro</OPTION>
-      </SELECT>
-      </p>
-
-      <p>
-      Regione:
-      <SELECT  id="region">
-        <OPTION>Abruzzo
-        <OPTION>Basilicata
-        <OPTION>Calabria
-        <OPTION>Campania
-        <OPTION Value="Emilia">Emilia-Romagna
-        <OPTION Value="Friuli">Friuli Venezia Giulia
-        <OPTION>Lazio
-        <OPTION>Liguria
-        <OPTION> Lombardia
-        <OPTION>Marche
-        <OPTION>Molise
-        <OPTION>Piemonte
-        <OPTION>Puglia
-        <OPTION>Sardegna
-        <OPTION>Sicilia
-        <OPTION>Toscana
-        <OPTION Value="Trentino">Trentino-Alto Adige
-        <OPTION>Umbria
-        <OPTION Value="Aosta">Valle d'Aosta
-        <OPTION>Veneto
-      </SELECT>
-      </p>
-
-      <br>
-      <br>
-      <br>
-
-      <div class='predict'>
-        <button id='predict-button' class='predict-button' type='button' onclick='predict()'>
-          Valuta
-        </button>
-      </div>
-
-      <div class='result'>
-        <div class='result-label'>
-          <label id='result'></label>
-        </div>
-      </div>
-
-    </div>
   </div>
+  <div class="text">
+    <h1 style="font-size:55px">
+      Smart Salary Estimator - Italia
+    </h1>
+    <p style="font-size:20px"><i>
+      Scopri a quanto dovrebbe ammontare il tuo <strong>stipendio</strong>,<br>
+      con il nostro modello di <strong>AI</strong> per il mercato Italiano!
+    </i></p>
+
+    <br>
+
+    <p>
+    Tipo di contratto:
+    <SELECT id="contract_time">
+    <OPTION Value="contract" SELECTED>determinato</OPTION>
+    <OPTION Value="permanent">indeterminato</OPTION>
+    </SELECT>
+    </p>
+
+    <p>
+    Settore:
+
+    <SELECT id="category">
+    <OPTION Value="Accounting & Finance Jobs" SELECTED>Accounting & Finanza</OPTION>
+    <OPTION Value="Admin Jobs">Amministrazione</OPTION>
+    <OPTION Value="Charity & Voluntary Jobs">Volontariato</OPTION>
+    <OPTION Value="Creative & Design Jobs">Creatività & Design</OPTION>
+    <OPTION Value="Customer Services Jobs">Servizio clienti</OPTION>
+    <OPTION Value="Domestic help & Cleaning Jobs" SELECTED> Aiuto domestico & Pulizie </OPTION>
+    <OPTION Value="Energy, Oil & Gas Jobs"> Energia, Olio & Gas</OPTION>
+    <OPTION Value="Engineering Jobs">Ingegneria</OPTION>
+    <OPTION Value="Graduate Jobs">Graduate program</OPTION>
+    <OPTION Value="HR & Recruitment Jobs">Risorse Umane</OPTION>
+    <OPTION Value="Healthcare & Nursing Jobs" SELECTED> Infermeria </OPTION>
+    <OPTION Value="Hospitality & Catering Jobs"> Catering </OPTION>
+    <OPTION Value="IT Jobs"> Information Technology</OPTION>
+    <OPTION Value="Legal Jobs"> Legale </OPTION>
+    <OPTION Value="Logistics & Warehouse Jobs" SELECTED> Logistica </OPTION>
+    <OPTION Value="Maintenance Jobs"> Manutenzione </OPTION>
+    <OPTION Value="Manufacturing Jobs"> Manifatturiero </OPTION>
+    <OPTION Value="PR, Advertising & Marketing Jobs" SELECTED> Marketing </OPTION>
+    <OPTION Value="Part time Jobs">Part time</OPTION>
+    <OPTION Value="Property Jobs">Immobiliare</OPTION>
+    <OPTION Value="Retail Jobs">Al dettaglio (retail)</OPTION>
+    <OPTION Value="Sales Jobs">Vendite</OPTION>
+    <OPTION Value="Scientific & QA Jobs">Scientifico & Quality Assurance</OPTION>
+    <OPTION Value="Social work Jobs">Sociale</OPTION>
+    <OPTION Value="Teaching Jobs">Insegnamento</OPTION>
+    <OPTION Value="Trade & Construction Jobs"> Edile </OPTION>
+    <OPTION Value="Travel Jobs"> Viaggio </OPTION>
+    <OPTION Value="Other/General Jobs">Altro</OPTION>
+    </SELECT>
+    </p>
+
+    <p>
+    Regione:
+    <SELECT  id="region">
+      <OPTION>Abruzzo
+      <OPTION>Basilicata
+      <OPTION>Calabria
+      <OPTION>Campania
+      <OPTION Value="Emilia">Emilia-Romagna
+      <OPTION Value="Friuli">Friuli Venezia Giulia
+      <OPTION>Lazio
+      <OPTION>Liguria
+      <OPTION> Lombardia
+      <OPTION>Marche
+      <OPTION>Molise
+      <OPTION>Piemonte
+      <OPTION>Puglia
+      <OPTION>Sardegna
+      <OPTION>Sicilia
+      <OPTION>Toscana
+      <OPTION Value="Trentino">Trentino-Alto Adige
+      <OPTION>Umbria
+      <OPTION Value="Aosta">Valle d'Aosta
+      <OPTION>Veneto
+    </SELECT>
+    </p>
+
+
+    <div class='predict'>
+      <button id='predict-button' class='predict-button' type='button' onclick='predict()'>
+        Valuta
+      </button>
+    </div>
+
+    <div class='result'>
+      <div class='result-label'>
+        <label id='result'></label>
+      </div>
+    </div>
+
+  </div>
+
 </body>
 
 

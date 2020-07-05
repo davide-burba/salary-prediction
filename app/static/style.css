@@ -43,8 +43,12 @@ body {
 
 
 .background {
-  /*background-image: ... ;*/
-  background-color: #22809E;
+  background-image: url(../images/background.jpg);
+  opacity: 1;
+  /* Add the blur effect */
+  filter: blur(4px);
+  -webkit-filter: blur(4px) brightness(50%);
+
   height: 1500px;
   background-position: center;
   background-repeat: no-repeat;
@@ -66,9 +70,9 @@ body {
 button.predict-button {
     width: 200px;
     height: 60px;
-    border: solid 1px #7052CB;
+    border: solid 1px #307590;
     border-radius: 2px;
-    background-color: #7052CB;
+    background-color: #307590;
     font-size: 23px;
     color: #ffffff;
 }

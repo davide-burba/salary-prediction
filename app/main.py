@@ -54,6 +54,7 @@ path = os.path.dirname(os.path.abspath(__file__)) + "/"
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory=path+"static"), name="static")
+app.mount("/images", StaticFiles(directory=path+"images"), name="images")
 
 features = pickle.load(open(path + "../models/features.p","rb"))
 bst = pickle.load(open(path + "../models/bst.p","rb"))
