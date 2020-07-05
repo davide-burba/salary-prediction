@@ -16,7 +16,7 @@ function predict() {
   xhr.onload = function(e) {
     if (this.readyState === 4) {
       var response = JSON.parse(e.target.responseText);
-      el("result").innerHTML = `Risultato:<br><br> ${response["prediction"]} \u20AC/anno <br> ${response["monthly_prediction"]} \u20AC/mese`;
+      el("result").innerHTML = `Risultato:<br><br> ${response["monthly_prediction"]} \u20AC/mese <br> ${response["prediction"]} \u20AC/anno`;
     }
     el("predict-button").innerHTML = "Valuta";
   };
