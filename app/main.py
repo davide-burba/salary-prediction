@@ -68,14 +68,11 @@ async def homepage(request):
 
 
 @app.route('/predict', methods=['POST'])
-async def predict(request):#data: Data):
+async def predict(request):
 
     tmp = await request.form()
     data = {f : tmp[f] for f in features}
-
-    #img_bytes = await (img_data['file'].read())
-
-    to_predict = [data[f] for f in features]#["permanent","Engineering Jobs","Friuli"]#
+    to_predict = [data[f] for f in features]
     pred = model.predict(*to_predict)
 
     return JSONResponse({"prediction" : np.round(pred.item()),"monthly_prediction" : np.round(pred.item()/12)})
