@@ -43,7 +43,7 @@ body {
 
 
 .background {
-  background-image: url(../images/background.jpg);
+  background-image: url(../images/background1.jpg);
   opacity: 1;
   /* Add the blur effect */
   filter: blur(4px);

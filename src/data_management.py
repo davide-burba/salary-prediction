@@ -1,6 +1,6 @@
 import pandas as pd
 
-class Loader:
+class DataLoader:
     def __init__(self,root,features = None, alpha = .01):
         self.col_y = 'reddito_netto'
         self.col_utils = ['n_comp_famiglia','n_percett_famiglia','n_lavor_famiglia',]
@@ -44,7 +44,12 @@ class Loader:
         self.cat_feat = [v for v in features if v in self.col_cat]
         self.num_feat = [v for v in features if v in self.col_num]
 
-        self.df = pd.read_csv(root + "preprocessed_data/bancaditalia/2016.csv")
+        # load data
+        self.df = pd.read_csv(root + "data/preprocessed/bancaditalia/2016.csv")
+
+        # process data
+        self._add_time_distances()
+
         # drop extrema
         if alpha > 0:
             low = self.df[self.col_y].quantile(alpha / 2)
@@ -55,3 +60,8 @@ class Loader:
         self.X = self.df[features].copy()
         self.X[self.cat_feat] = self.X[self.cat_feat].astype("category")
         self.y = self.df[self.col_y].copy()
+
+    def _add_time_distances(self):
+        # fix time variables
+        self.df['anni_da_edu'] = 2016 - self.df['annoedu']
+        self.df['eta_lavoro_corrente'] = 2016 - self.df['eta_lavoro_corrente'] # check this

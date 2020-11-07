@@ -1,0 +1,18 @@
+
+action : cross_validate
+
+data_params : 
+  features: null
+  alpha : 0.05
+
+model : LightGBM
+model_args :
+    objective : "mape"
+    num_iterations : 200
+    metrics: 
+      - "l1"
+      - "mape"
+    learning_rate : 0.1
+    reg_sqrt : False
+    min_data_in_leaf : 50
+    verbose : 0
