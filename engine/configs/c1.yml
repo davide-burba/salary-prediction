@@ -1,0 +1,37 @@
+
+# where/wether to save
+experiment : "feat_sel/"
+run_name : null
+tags : {}
+store_artifacts : True
+
+# what to do 
+action : cross_validate
+
+# data parameters
+data_args : 
+  features: [
+    # contract
+    'partime', 'contratto', 'ore_settimana', 
+    # job
+    'dimensioni_azienda', 'qualifica', 'settore',  'codice_lavoro_isco',  'status_lavoratore','settore_less',  
+    # study
+    'voto_perc','titolo_studio', 'tipo_laurea', 'selode', 'tipo_diploma', 
+    # where
+    'regione','zona_less', 'zona', 'ampiezza_comune_less','ampiezza_comune',
+    # history
+    'anni_da_primo_lavoro', 'anni_da_lavoro_corrente', 'anni_da_edu','anni_contributi', 'n_esp_lavorative', 
+    # discarded
+    #'cit_italiana', 'sex','eta_discreta_5','ETA',
+    ]
+  alpha : 0.05
+
+# model parameters
+model : LightGBM
+model_args :
+    objective : "mape"
+    num_iterations : 200
+    learning_rate : 0.1
+    reg_sqrt : False
+    min_data_in_leaf : 50
+    verbose : 0

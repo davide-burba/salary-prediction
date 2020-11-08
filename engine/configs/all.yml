@@ -1,6 +1,6 @@
 
 # where/wether to save
-experiment : "debug/"
+experiment : "feat_sel/"
 run_name : null
 tags : {}
 store_artifacts : True
