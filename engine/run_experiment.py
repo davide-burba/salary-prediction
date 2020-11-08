@@ -7,18 +7,21 @@ import sys
 import yaml
 import argparse
 from datetime import datetime
+import mlflow
 
-ROOT = "../"
+ROOT = os.getcwd() +  "/../"
 sys.path.insert(0,ROOT + "src/")
 
 from data_management import DataLoader
 from models import LightGBM
+from utils import log_pickle_artifact
+
 
 DEFAULT_ARGS = dict(
     path_dir = "debug/",
     path_pattern = "",
+    store_artifacts = False,
 )
-
 
 def cross_validate(args):
     # get data
@@ -30,13 +33,16 @@ def cross_validate(args):
     # show scores
     mape = scores['mape-mean'][-1]
     mae = scores['l1-mean'][-1]
+
     print("***** CV *****")
     print("MAPE: {}%    MAE: {} € \n".format(round(100*mape,2),round(mae,2)))
 
-    # save
-    if args["path"] is not None:
-        # TODO
-        pass
+    # log scores
+    for k in scores:
+        for step,v in enumerate(scores[k]):
+            mlflow.log_metric(k,v,step)
+    mlflow.log_metric("mape", mape)
+    mlflow.log_metric("mae",mae)
 
 
 def train_model(args):
@@ -46,11 +52,10 @@ def train_model(args):
     model = get_model(args)
     # train
     model.fit(X,y)
-
     # save
-    if args["path"] is not None:
-        pd.to_pickle(model, args["path"] + "model.p")
-        pd.to_pickle(list(X.columns.values), args["path"] + "features.p")
+    if args["store_artifacts"]:
+        log_pickle_artifact(model,"model.p")
+        log_pickle_artifact(list(X.columns.values),"features.p")
 
 
 def get_model(args):
@@ -64,8 +69,8 @@ def get_model(args):
 def get_data(args):
     loader = DataLoader(
         ROOT, 
-        args["data_params"]["features"], 
-        alpha = args["data_params"]["alpha"])
+        args["data_args"]["features"], 
+        alpha = args["data_args"]["alpha"])
     X = loader.X
     y = loader.y.values
 
@@ -73,6 +78,7 @@ def get_data(args):
 
 
 def main(args):
+
     print("***** args *****")
     print(args,"\n")
 
@@ -85,6 +91,8 @@ def main(args):
 
 
 if __name__ == "__main__":
+
+    print(ROOT)
 
     # parser
     parser = argparse.ArgumentParser()
@@ -103,14 +111,24 @@ if __name__ == "__main__":
         if k not in args:
             args[k] = DEFAULT_ARGS[k]
 
-    # set output directory
-    if args["path_dir"] is not None:
-        now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        args["path"] = ROOT + "experiments/" + args["path_dir"] + now + args["path_pattern"] + "/"
-        if not os.path.isdir(args["path"]):
-            os.makedirs(args["path"])
-    else: 
-        args["path"] = None
+    # set logging
+    mlflow.set_tracking_uri("file:" + ROOT + "mlruns/")
+    mlflow.set_experiment(args["experiment"])
+    mlflow.start_run(run_name=args["run_name"])
+    mlflow.set_tags(args["tags"])
+
+    # store source code and config for reproducibility
+    mlflow.log_artifact(ROOT + "src")
+    mlflow.log_artifact(ROOT + "engine/run_experiment.py")
+    mlflow.log_artifact(parsed["config"])
+
+    # store args (flatten nested dictionaries)
+    for k in args:
+        if type(args[k]) is not dict:
+            mlflow.log_param(k,args[k])
+        else:
+            for sub_k in args[k]:
+                mlflow.log_param(k + "-" + sub_k,args[k][sub_k])
 
     # run experiment
     main(args)

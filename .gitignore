@@ -14,3 +14,5 @@ preprocessed_data
 experiments
 tmp
 *.Rhistory
+mlruns
+.tmp

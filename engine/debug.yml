@@ -1,10 +1,19 @@
 
+# where/wether to save
+experiment : "debug/"
+run_name : null
+tags : {}
+store_artifacts : True
+
+# what to do 
 action : cross_validate
 
-data_params : 
+# data parameters
+data_args : 
   features: null
   alpha : 0.05
 
+# model parameters
 model : LightGBM
 model_args :
     objective : "mape"
