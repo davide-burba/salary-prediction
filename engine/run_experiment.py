@@ -8,6 +8,7 @@ import yaml
 import argparse
 from datetime import datetime
 import mlflow
+import logging
 
 ROOT = os.getcwd() +  "/../"
 sys.path.insert(0,ROOT + "src/")
@@ -21,6 +22,9 @@ DEFAULT_ARGS = dict(
     path_dir = "debug/",
     path_pattern = "",
     store_artifacts = False,
+    random_state = 1234,
+    cv_state = 1234,
+    n_splits=5,
 )
 
 def cross_validate(args):
@@ -29,20 +33,17 @@ def cross_validate(args):
     # get model
     model = get_model(args)
     # train
-    scores = model.cross_validate(X,y)
+    scores,artifacts = model.cross_validate(X,y,args["n_splits"],args["cv_state"])
     # show scores
-    mape = scores['mape-mean'][-1]
-    mae = scores['l1-mean'][-1]
-
-    print("***** CV *****")
-    print("MAPE: {}%    MAE: {} € \n".format(round(100*mape,2),round(mae,2)))
-
+    logging.info("***** CV scores *****")
+    logging.info(scores)
     # log scores
-    for k in scores:
-        for step,v in enumerate(scores[k]):
-            mlflow.log_metric(k,v,step)
-    mlflow.log_metric("mape", mape)
-    mlflow.log_metric("mae",mae)
+    for k in scores: 
+        mlflow.log_metric(k,scores[k])
+    # log artifacts
+    if args["store_artifacts"]:
+        model.log_artifacts(artifacts)
+        
 
 
 def train_model(args):
@@ -82,6 +83,10 @@ def main(args):
     print("***** args *****")
     print(args,"\n")
 
+    # fix randomness
+    np.random.seed(args["random_state"])
+
+    # choose action
     if args["action"] == "cross_validate":
         cross_validate(args)
     elif args["action"] == "train_model":
@@ -91,8 +96,6 @@ def main(args):
 
 
 if __name__ == "__main__":
-
-    print(ROOT)
 
     # parser
     parser = argparse.ArgumentParser()
@@ -106,21 +109,21 @@ if __name__ == "__main__":
     else:
         args = dict()
 
-    # set default values
+    # set default args values
     for k in DEFAULT_ARGS:
         if k not in args:
             args[k] = DEFAULT_ARGS[k]
 
-    # set logging
+    # set mlflow logging
     mlflow.set_tracking_uri("file:" + ROOT + "mlruns/")
     mlflow.set_experiment(args["experiment"])
     mlflow.start_run(run_name=args["run_name"])
     mlflow.set_tags(args["tags"])
 
     # store source code and config for reproducibility
-    mlflow.log_artifact(ROOT + "src")
-    mlflow.log_artifact(ROOT + "engine/run_experiment.py")
-    mlflow.log_artifact(parsed["config"])
+    mlflow.log_artifact(ROOT + "src","reproduce")
+    mlflow.log_artifact(ROOT + "engine/run_experiment.py","reproduce/engine")
+    mlflow.log_artifact(parsed["config"],"reproduce/engine")
 
     # store args (flatten nested dictionaries)
     for k in args:
