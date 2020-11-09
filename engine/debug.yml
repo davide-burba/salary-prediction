@@ -20,11 +20,6 @@ data_args :
   alpha : 0.05
 
 # model parameters
-model : LightGBM
+model : ProbNN
 model_args :
-    objective : "mape"
-    num_iterations : 200
-    learning_rate : 0.1
-    reg_sqrt : False
-    min_data_in_leaf : 50
-    verbose : 0
+    epochs : 50

@@ -14,7 +14,7 @@ ROOT = os.getcwd() +  "/../"
 sys.path.insert(0,ROOT + "src/")
 
 from data_management import DataLoader
-from models import LightGBM
+from models import LightGBM, ProbNN
 from utils import log_pickle_artifact
 
 
@@ -62,8 +62,12 @@ def train_model(args):
 def get_model(args):
     if args["model"] == "LightGBM":
         model = LightGBM(args["model_args"])
+    elif args["model"] == "ProbNN":
+        model = ProbNN(**args["model_args"])    
     elif args["model"] == "Baseline":
-        model = Baseline(args["model_args"])
+        model = Baseline()
+    else:
+        raise ValueError
     return model
 
 
