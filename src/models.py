@@ -1,14 +1,14 @@
-import numpy as np
-from sklearn.model_selection import KFold
-import lightgbm as lgb
-from copy import deepcopy
-import mlflow
-import matplotlib.pyplot as plt
-import matplotlib; matplotlib.use('Agg')
-import torch
-from torch import nn
 import mlflow
 import pandas as pd
+import numpy as np
+import lightgbm as lgb
+import torch
+from torch import nn
+from sklearn.model_selection import KFold
+from copy import deepcopy
+import matplotlib.pyplot as plt
+import matplotlib; matplotlib.use('Agg')
+
 # local
 from utils import log_image_artifact
 
@@ -112,6 +112,7 @@ class ProbNN(BaseModel):
                 epochs = 256,
                 batch_size = 256,
                 num_nodes = [64],
+                embedding_size = 4,
                 batch_norm = True,
                 activation = torch.nn.ReLU,
                 output_activation = ExpActivation,
@@ -132,6 +133,7 @@ class ProbNN(BaseModel):
         self.epochs = epochs
         self.batch_size = batch_size
         self.num_nodes = num_nodes 
+        self.embedding_size = embedding_size
         self.batch_norm = batch_norm
         self.activation = activation
         self.output_activation = output_activation
@@ -149,10 +151,31 @@ class ProbNN(BaseModel):
             np.random.seed(self.random_state)
             torch.manual_seed(self.random_state)
 
+        # prepare data 
+        # ------ OLD ------ 
+        # for c in X.columns:
+        #     if X[c].dtype.name == "category":
+        #         X[c] = X[c].cat.codes
+        # X = X.fillna(-1)
+        # x_train = torch.Tensor(X.values)
+        # y_train = torch.Tensor(y / 10000)
+        # ------ NEW ------ 
+        self.n_categorical = (X.dtypes == "category").sum()
+        x_train = torch.Tensor(X.astype("float64").values)
+        y_train = torch.Tensor(y / 10000)
+        # ------------ 
+
+        dataloader = torch.utils.data.DataLoader(TensorLoader(x_train, y_train),
+                                                 batch_size=self.batch_size,
+                                                 shuffle=True,
+                                                 drop_last=False)
         # prepare network
-        input_features = X.shape[1]
+        input_features = x_train.shape[1]
+        self.embedding_cat_sizes = [X[c].cat.categories.shape[0] for c in X.columns[:self.n_categorical]]
         self.engine = NNArch(input_features,
                             self.output_features,
+                            self.embedding_cat_sizes,
+                            self.embedding_size,
                             self.num_nodes,
                             self.dropout,
                             self.batch_norm,
@@ -162,18 +185,6 @@ class ProbNN(BaseModel):
         self.engine.train()
         optimizer = torch.optim.Adam(self.engine.parameters(),lr=self.lr)
         
-        # prepare data ---------------------------------------------------------- TMP!!!!
-        for c in X.columns:
-            if X[c].dtype.name == "category":
-                X[c] = X[c].cat.codes
-        X = X.fillna(-1)
-        x_train = torch.Tensor(X.values)
-        y_train = torch.Tensor(y / 10000)
-
-        dataloader = torch.utils.data.DataLoader(TensorLoader(x_train, y_train),
-                                                 batch_size=self.batch_size,
-                                                 shuffle=True,
-                                                 drop_last=False)
         self.counter += 1
         # train
         for epoch in range(self.epochs):
@@ -190,13 +201,10 @@ class ProbNN(BaseModel):
             mlflow.log_metric("loss_{}".format(self.counter),np.mean(epoch_loss),epoch)
             
     def predict(self,X):
+
         self.engine.eval()
-        # prepare data ---------------------------------------------------------- TMP!!!!
-        for c in X.columns:
-            if X[c].dtype.name == "category":
-                X[c] = X[c].cat.codes
-        X = X.fillna(-1)
-        x = torch.Tensor(X.values)
+        x = torch.Tensor(X.astype("float64").values)
+
         # forward
         out = self.engine(x)
         
@@ -248,6 +256,8 @@ class NNArch(nn.Module):
     def __init__(self, 
                  in_features,
                  out_features,
+                 embedding_cat_sizes = [],
+                 embedding_size = 4,
                  hidden = [64],
                  dropout = 0.2,
                  batch_norm = True,
@@ -255,8 +265,18 @@ class NNArch(nn.Module):
                  output_activation = ExpActivation,
                 ):
         super().__init__()
+
+        # embedding
+        self.n_embeddings = len(embedding_cat_sizes)
+        self.embedding_size = embedding_size
+        self.embedding_layers = []
+        for dict_size in embedding_cat_sizes:
+            self.embedding_layers.append(nn.Embedding(dict_size,embedding_size))
+        self.embedding_layers = nn.ModuleList(self.embedding_layers)
+
+        # fully-connected
         layers = []
-        previous = in_features
+        previous = in_features + self.n_embeddings * (embedding_size - 1)
         for h in hidden:
             layers.append(nn.Linear(previous,h))
             if batch_norm: layers.append(nn.BatchNorm1d(h))
@@ -268,12 +288,16 @@ class NNArch(nn.Module):
             layers.append(output_activation())
         self.surv_net = nn.Sequential(*layers)
 
-    def forward(self, input):
-        out = self.surv_net(input)
+    def forward(self, x):
+        embedded = []
+        for i in range(self.n_embeddings):
+            emb = self.embedding_layers[i](x[:,i].long())
+            embedded.append(emb)   
+        embedded = torch.cat(embedded,axis=1)
+
+        x = torch.cat([embedded,x[:,self.n_embeddings:]],axis=1)
+        out = self.surv_net(x)
         return out
-
-
-
 
 
 class LossWeibull(nn.Module):
@@ -298,4 +322,5 @@ class LossLogLogistic(nn.Module):
         loglik = torch.log(beta_ / alpha_) + (beta_ - 1) * torch.log(y / alpha_) - 2 * torch.log(1 + (y / alpha_) ** beta_)
         loss = - loglik.sum()
         return loss
+
 

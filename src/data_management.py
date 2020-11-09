@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.preprocessing import OrdinalEncoder
 
 
 Y_COL = 'reddito_netto'
@@ -26,12 +27,18 @@ class DataLoader:
         # process data
         self._add_time_distances()
         self._drop_extrema(alpha)
+        self._fillna()
 
         # set features
         if features is None:
         	features = ALL_FEATURES
         self.cat_feat = [v for v in features if v in CATEGORICAL]
         self.num_feat = [v for v in features if v in NUMERIC]
+        # sanity check
+        assert len(features) == len(self.cat_feat) + len(self.num_feat)
+
+        # put cat_feat at the beginning
+        features = self.cat_feat + self.num_feat
 
        	# set X,y
         self.X = self.df[features].copy()
@@ -53,8 +60,26 @@ class DataLoader:
             self.df = self.df[(low < self.df[Y_COL]) & (self.df[Y_COL] < high)]
             self.df = self.df.reset_index(drop=True)
 
+    def _fillna(self):
+        """make Nans a category for categorical, else -1"""
+        for c in self.df.columns:
+            if self.df[c].dtype.name is "category":
+                if self.df[c].isnull().sum() > 0:
+                    self.df[c].cat.add_categories("Nan",inplace=True)
+                    self.df[c] = self.df[c].fillna("Nan")
+            else:
+                self.df[c] = self.df[c].fillna(-1)
 
 
+class CatEncoder:
+    def fit_transform(self,X): 
+        self.encoder = OrdinalEncoder()
+        self.n_categorical = (X.dtypes == "category").sum()
+        self.encoder.fit(X[X.columns[:self.n_categorical]])
+        return self.transform(X)
 
-
-
+    def transform(self,X):
+        x_cat = self.encoder.fit_transform(X[X.columns[:self.n_categorical]])
+        X[X.columns[:self.n_categorical]] = x_cat
+        X[X.columns[:self.n_categorical]] = X[X.columns[:self.n_categorical]].astype("category")
+        return X

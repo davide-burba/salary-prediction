@@ -9,11 +9,12 @@ import argparse
 from datetime import datetime
 import mlflow
 import logging
+from sklearn.preprocessing import OrdinalEncoder
 
 ROOT = os.getcwd() +  "/../"
 sys.path.insert(0,ROOT + "src/")
 
-from data_management import DataLoader
+from data_management import DataLoader, CatEncoder
 from models import LightGBM, ProbNN
 from utils import log_pickle_artifact
 
@@ -79,6 +80,14 @@ def get_data(args):
     X = loader.X
     y = loader.y.values
 
+    # ---- preprocess ---- 
+    # encode categories
+    cat_encoder = CatEncoder()
+    X = cat_encoder.fit_transform(X)
+    # normalize (TODO)
+    
+    if args["store_artifacts"]:
+        log_pickle_artifact(cat_encoder,"cat_encoder.p")
     return X,y
 
 
