@@ -14,7 +14,7 @@ from utils import log_image_artifact
 
 
 class BaseModel:
-    def fit(self,X,y):
+    def fit(self,X,y,X_valid=None,y_valid=None):
         pass
     def predict(self,X):
         pass
@@ -27,7 +27,8 @@ class BaseModel:
             X_train,X_valid = X.loc[idx_train],X.loc[idx_valid]
             y_train,y_valid = y[idx_train],y[idx_valid]
             # fit
-            self.fit(X_train,y_train)
+            self.fit(X_train,y_train,
+                     X_valid,y_valid) # for monitoring
             # predict
             y_pred = self.predict(X_valid)
             # evaluate
@@ -62,7 +63,7 @@ class LightGBM(BaseModel):
     def __init__(self,params):
         self.params = params
 
-    def fit(self,X,y):
+    def fit(self,X,y,X_valid=None,y_valid=None):
         data = lgb.Dataset(X,y,free_raw_data=False)
         self.engine = lgb.train(self.params,data)
 
@@ -115,20 +116,31 @@ class ProbNN(BaseModel):
                 embedding_size = 4,
                 batch_norm = True,
                 activation = torch.nn.ReLU,
-                output_activation = ExpActivation,
+                output_activation = torch.nn.Softplus,#ExpActivation,
                 dropout = 0.2,
-                clip_grad = 100,
-                distr="weibull",
+                clip_grad = 1000,
+                distr="normal",
+                y_unit = 1000,
                 random_state=None,
                 ):
-        if distr == "weibull":
+        if distr == "normal":
+            self.criterion = LossNormal()
+            self.output_features = 2
+        elif distr == "weibull":
             self.criterion = LossWeibull()
             self.output_features = 2
         elif distr == "loglogistic":
             self.criterion = LossLogLogistic()
             self.output_features = 2
+        elif distr == "mae":
+            self.criterion = nn.L1Loss()
+            self.output_features = 1
+        elif distr == "mape":
+            self.criterion = LossMape()
+            self.output_features = 1
         else:
             raise NotImplementedError()
+
         self.lr = lr
         self.epochs = epochs
         self.batch_size = batch_size
@@ -140,38 +152,35 @@ class ProbNN(BaseModel):
         self.dropout = dropout
         self.clip_grad = clip_grad
         self.distr = distr
-        self.loss = []
-        self.distr = distr
         self.random_state = random_state
+        self.y_unit = y_unit
 
         self.counter = 0
         
-    def fit(self,X,y):
+    def fit(self,X_train,y_train,X_valid=None,y_valid=None):
         if self.random_state is not None:
             np.random.seed(self.random_state)
             torch.manual_seed(self.random_state)
 
         # prepare data 
-        # ------ OLD ------ 
-        # for c in X.columns:
-        #     if X[c].dtype.name == "category":
-        #         X[c] = X[c].cat.codes
-        # X = X.fillna(-1)
-        # x_train = torch.Tensor(X.values)
-        # y_train = torch.Tensor(y / 10000)
-        # ------ NEW ------ 
-        self.n_categorical = (X.dtypes == "category").sum()
-        x_train = torch.Tensor(X.astype("float64").values)
-        y_train = torch.Tensor(y / 10000)
-        # ------------ 
+        self.n_categorical = (X_train.dtypes == "category").sum()
 
-        dataloader = torch.utils.data.DataLoader(TensorLoader(x_train, y_train),
-                                                 batch_size=self.batch_size,
-                                                 shuffle=True,
-                                                 drop_last=False)
+        x_training = torch.Tensor(X_train.astype("float64").values)
+        y_training = torch.Tensor(y_train / self.y_unit).reshape(-1,1)
+        dataloader_train = torch.utils.data.DataLoader(TensorLoader(x_training, y_training),
+                                                    batch_size=self.batch_size,
+                                                    shuffle=True,
+                                                    drop_last=False)
+        if X_valid is not None:
+            x_validation = torch.Tensor(X_valid.astype("float64").values)
+            y_validation = torch.Tensor(y_valid / self.y_unit).reshape(-1,1)
+            dataloader_valid = torch.utils.data.DataLoader(TensorLoader(x_validation, y_validation),
+                                                        batch_size=self.batch_size,
+                                                        shuffle=False,
+                                                        drop_last=False)
         # prepare network
-        input_features = x_train.shape[1]
-        self.embedding_cat_sizes = [X[c].cat.categories.shape[0] for c in X.columns[:self.n_categorical]]
+        input_features = X_train.shape[1]
+        self.embedding_cat_sizes = [X_train[c].cat.categories.shape[0] for c in X_train.columns[:self.n_categorical]]
         self.engine = NNArch(input_features,
                             self.output_features,
                             self.embedding_cat_sizes,
@@ -189,7 +198,7 @@ class ProbNN(BaseModel):
         # train
         for epoch in range(self.epochs):
             epoch_loss = []
-            for x,y in dataloader:
+            for x,y in dataloader_train:
                 out = self.engine(x)
                 loss = self.criterion(out,y)
                 optimizer.zero_grad()
@@ -197,9 +206,32 @@ class ProbNN(BaseModel):
                 nn.utils.clip_grad_norm_(self.engine.parameters(),self.clip_grad)
                 optimizer.step()
                 epoch_loss.append(loss.item())
-            self.loss.append(np.mean(epoch_loss))
-            mlflow.log_metric("loss_{}".format(self.counter),np.mean(epoch_loss),epoch)
-            
+
+            batch_loss = np.mean(epoch_loss)
+            y_pred = self.predict(X_train)
+
+            mape = np.abs((y_train - y_pred) / y_train).mean()
+            mae = np.abs((y_train - y_pred)).mean()
+
+            mlflow.log_metric("loss_{}_train".format(self.counter),batch_loss,epoch)
+            mlflow.log_metric("mape_{}_train".format(self.counter),mape,epoch)
+            mlflow.log_metric("mae_{}_train".format(self.counter),mae,epoch)
+
+            if X_valid is not None:
+                epoch_loss = []
+                for x,y in dataloader_valid:
+                    out = self.engine(x)
+                    loss = self.criterion(out,y)
+                    epoch_loss.append(loss.item())
+
+                batch_loss = np.mean(epoch_loss)
+                y_pred = self.predict(X_valid)
+                mape = np.abs((y_valid - y_pred) / y_valid).mean()
+                mae = np.abs((y_valid - y_pred)).mean()
+                mlflow.log_metric("loss_{}_valid".format(self.counter),batch_loss,epoch)
+                mlflow.log_metric("mape_{}_valid".format(self.counter),mape,epoch)
+                mlflow.log_metric("mae_{}_valid".format(self.counter),mae,epoch)
+                
     def predict(self,X):
 
         self.engine.eval()
@@ -207,8 +239,11 @@ class ProbNN(BaseModel):
 
         # forward
         out = self.engine(x)
-        
-        if self.distr == "weibull":
+        if self.distr == "normal":
+            mu_, _ = out[:,0],out[:,1]
+            mu_ = mu_.detach().numpy()
+            pred = mu_
+        elif self.distr == "weibull":
             lambda_, p_ = out[:,0],out[:,1]
             lambda_ = lambda_.detach().numpy()
             p_ = p_.detach().numpy()
@@ -218,17 +253,25 @@ class ProbNN(BaseModel):
             alpha_ = alpha_.detach().numpy()
             beta_ = beta_.detach().numpy()
             pred = alpha_
+        elif self.distr == "mae" or self.distr == "mape":
+            pred = out[:,0].detach().numpy()
         else:
             raise NotImplementedError()
 
-        return pred * 1000
+        return pred * self.y_unit
 
     def predict_parameters(self,X):
+
         self.engine.eval()
-        x = torch.Tensor(X.values)
+        x = torch.Tensor(X.astype("float64").values)
         out = self.engine(x)
         
-        if self.distr == "weibull":
+        if self.distr == "normal":
+            mu_, sigma_ = out[:,0],out[:,1]
+            mu_ = mu_.detach().numpy()
+            sigma_ = sigma_.detach().numpy()
+            return mu_,sigma_
+        elif self.distr == "weibull":
             lambda_, p_ = out[:,0],out[:,1]
             lambda_ = lambda_.detach().numpy()
             p_ = p_.detach().numpy()
@@ -300,6 +343,25 @@ class NNArch(nn.Module):
         return out
 
 
+class LossMape(nn.Module):
+    """mape"""
+    def __call__(self, model_output, y):
+        loss = torch.abs((model_output - y) / y).mean()
+        return loss
+
+
+class LossNormal(nn.Module):
+    """Negative Normal log-likelyhood. 
+    - mu = model_output[:,0] 
+    - sigma = model_output[:,1]
+    """
+    def __call__(self, model_output, y):
+        mu_, sigma_ = model_output[:,0],model_output[:,1]
+        loglik = - torch.log(sigma_) - 0.5 * ((y[:,0] - mu_)  / sigma_) ** 2
+        loss = - loglik.mean()
+        return loss
+
+
 class LossWeibull(nn.Module):
     """Negative Weibull log-likelyhood. 
     - lambda = model_output[:,0] 
@@ -307,7 +369,7 @@ class LossWeibull(nn.Module):
     """
     def __call__(self, model_output, y):
         lambda_, p_ = model_output[:,0],model_output[:,1]
-        loglik = torch.log(lambda_ * p_) + (p_ - 1) * torch.log(lambda_ * y) - (lambda_ * y) ** p_
+        loglik = torch.log(lambda_ * p_) + (p_ - 1) * torch.log(lambda_ * y[:,0]) - (lambda_ * y[:,0]) ** p_
         loss = - loglik.mean()
         return loss
 

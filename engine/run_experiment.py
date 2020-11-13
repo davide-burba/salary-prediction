@@ -28,6 +28,7 @@ DEFAULT_ARGS = dict(
     n_splits=5,
 )
 
+
 def cross_validate(args):
     # get data
     X,y = get_data(args)
@@ -44,7 +45,6 @@ def cross_validate(args):
     # log artifacts
     if args["store_artifacts"]:
         model.log_artifacts(artifacts)
-        
 
 
 def train_model(args):
@@ -54,6 +54,14 @@ def train_model(args):
     model = get_model(args)
     # train
     model.fit(X,y)
+
+    # log training scores
+    y_pred = model.predict(X)
+    mae_train = np.abs(y_pred - y).mean()
+    mape_train = np.abs((y_pred - y) / y).mean()
+    mlflow.log_metric("mae_train",mae_train)
+    mlflow.log_metric("mape_train",mape_train)
+
     # save
     if args["store_artifacts"]:
         log_pickle_artifact(model,"model.p")
@@ -85,7 +93,7 @@ def get_data(args):
     cat_encoder = CatEncoder()
     X = cat_encoder.fit_transform(X)
     # normalize (TODO)
-    
+
     if args["store_artifacts"]:
         log_pickle_artifact(cat_encoder,"cat_encoder.p")
     return X,y

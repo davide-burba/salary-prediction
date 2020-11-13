@@ -6,7 +6,7 @@ tags : {}
 store_artifacts : True
 
 # what to do 
-action : cross_validate
+action : train_model
 
 # data parameters
 data_args : 
@@ -22,4 +22,10 @@ data_args :
 # model parameters
 model : ProbNN
 model_args :
-    epochs : 200
+    epochs : 500
+    dropout : 0
+    lr : 0.01
+    batch_size : 256
+    num_nodes : [32]
+    embedding_size : 8
+    distr : weibull
