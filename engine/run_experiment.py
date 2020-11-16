@@ -59,8 +59,12 @@ def train_model(args):
     y_pred = model.predict(X)
     mae_train = np.abs(y_pred - y).mean()
     mape_train = np.abs((y_pred - y) / y).mean()
+    median_ae_train = np.median(np.abs(y_pred - y))
+    median_ape_train = np.median(np.abs((y_pred - y) / y))
     mlflow.log_metric("mae_train",mae_train)
     mlflow.log_metric("mape_train",mape_train)
+    mlflow.log_metric("median_ae_train",median_ae_train)
+    mlflow.log_metric("median_ape_train",median_ape_train)
 
     # save
     if args["store_artifacts"]:

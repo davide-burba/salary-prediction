@@ -1,12 +1,12 @@
 
 # where/wether to save
-experiment : "debug/"
+experiment : "feat_sel/"
 run_name : null
 tags : {}
 store_artifacts : True
 
 # what to do 
-action : train_model
+action : cross_validate
 
 # data parameters
 data_args : 
@@ -27,12 +27,11 @@ data_args :
   alpha : 0.05
 
 # model parameters
-model : ProbNN
+model : LightGBM
 model_args :
-    epochs : 100
-    dropout : 0
-    lr : 0.01
-    batch_size : 256
-    num_nodes : [32]
-    embedding_size : 4
-    distr : normal
+    objective : "mape"
+    num_iterations : 200
+    learning_rate : 0.1
+    reg_sqrt : False
+    min_data_in_leaf : 50
+    verbose : 0
