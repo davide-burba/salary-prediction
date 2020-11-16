@@ -12,7 +12,7 @@ action : train_model
 data_args : 
   features: [
     # contract
-    'partime', 'contratto', 'ore_settimana', 
+    'contratto', 'ore_settimana', # 'partime',  
     # job
     'dimensioni_azienda', 'settore',  'qualifica', #'status_lavoratore', #'codice_lavoro_isco',  ## 'settore_less',  
     # study

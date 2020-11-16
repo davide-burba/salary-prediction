@@ -26,7 +26,7 @@ model = pickle.load(open(path + "../models/20201116/model.p","rb"))
 features = pickle.load(open(path + "../models/20201116/features.p","rb"))
 preprocessor = pickle.load(open(path + "../models/20201116/cat_encoder.p","rb"))
 catfeat_map = dict(
-    partime = {"a tempo pieno": 1, "part-time": 2},
+    #partime = {"a tempo pieno": 1, "part-time": 2},
     contratto = {"a tempo indeterminato" : 1.0, "a tempo determinato" : 2.0, "di lavoro interinale" : 3.0, "non specificato" : None},
     dimensioni_azienda = {"fino a 4 addetti": 1, "tra 5 e 15 addetti": 2, "tra 16 e 19 addetti": 3, "tra 20 e 49 addetti": 4, "tra 50 e 99 addetti": 5, "tra 100 e 499 addetti": 6, "500 addetti ed oltre": 7, "Pubblica Amministrazione": 8, "non specificato":  None},
     titolo_studio = {"nessuno" : 1,"licenza elementare" : 2,"licenza media inferiore" : 3,"diploma professionale (3 anni)" : 4,"diploma media superiore" : 5,"diploma universitario/laurea triennale" : 6,"laurea/laurea magistrale" : 7,"specializzazione post-laurea" : 8},
@@ -37,6 +37,8 @@ catfeat_map = dict(
     regione = {"Piemonte" : 1,"Valle d'Aosta" : 2,"Lombardia" : 3,"Trentino" : 4,"Veneto" : 5,"Friuli" : 6,"Liguria" : 7,"Emilia Romagna" : 8,"Toscana" : 9,"Umbria" : 10,"Marche" : 11,"Lazio" : 12,"Abruzzo" : 13,"Molise" : 14,"Campania" : 15,"Puglia" : 16,"Basilicata" : 17,"Calabria" : 18,"Sicilia" : 19,"Sardegna" : 20,},
     ampiezza_comune = {"fino a 5.000 abitanti" : 1, "5.000-20.000 abitanti" : 2, "20.000-50.000 abitanti" : 3, "50.000-200.000 abitanti" : 4, "oltre 200.000 abitanti" : 5, }
 )
+
+print(features)
 
 
 @app.route('/')
@@ -100,6 +102,5 @@ def show_normal(mu,sigma,perc = .75,y_unit = 1000):
         plt.yticks([])
         plt.ylim(0,density_mu*1.4)
         plt.xlim(mu - 3*sigma, mu + 3*sigma)
-        #plt.tight_layout()
         plt.title("Salario netto annuale [stima]",size = 30)
     return fig,start * y_unit,end * y_unit

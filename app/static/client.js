@@ -22,7 +22,6 @@ function predict() {
     el("predict-button").innerHTML = "Valuta";
   };
 
-  var partime = el("partime").value;
   var contratto = el("contratto").value;
   var ore_settimana = el("ore_settimana").value;
   var dimensioni_azienda = el("dimensioni_azienda").value;
@@ -40,7 +39,6 @@ function predict() {
   var n_esp_lavorative = el("n_esp_lavorative").value;
 
   var fileData = new FormData();
-  fileData.append("partime", partime);
   fileData.append("contratto", contratto);
   fileData.append("ore_settimana", ore_settimana);
   fileData.append("dimensioni_azienda", dimensioni_azienda);
