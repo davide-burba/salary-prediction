@@ -14,8 +14,10 @@ function predict() {
   };
   xhr.onload = function(e) {
     if (this.readyState === 4) {
+      var img = document.getElementById("ImgDistribution");
+      img.src = "images/distribution.png"
       var response = JSON.parse(e.target.responseText);
-      el("result").innerHTML = `Risultato:<br><br> ${response["monthly_prediction"]} \u20AC/mese <br><br> ${response["prediction"]} \u20AC/anno`;
+      el("result").innerHTML = `STIME<br><br> Salario netto annuale: ${response["prediction"]} \u20AC <br><br> Incertezza: Il 75% delle volte il salario è compreso tra ${response["lower_bound"]} \u20AC e ${response["upper_bound"]} \u20AC`;
     }
     el("predict-button").innerHTML = "Valuta";
   };
@@ -56,17 +58,4 @@ function predict() {
   fileData.append("n_esp_lavorative", n_esp_lavorative);
 
   xhr.send(fileData);
-}
-
-
-
-function showPicked(input) {
-
-  el("upload-label").innerHTML = input.files[0].name;
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    el("image-picked").src = e.target.result;
-    el("image-picked").className = "";
-  };
-  reader.readAsDataURL(input.files[0]);
 }

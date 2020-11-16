@@ -14,10 +14,17 @@ from pydantic import BaseModel
 import os
 import sys
 import io
-
 sys.path.insert(0,"src/")
 
+path = os.path.dirname(os.path.abspath(__file__)) + "/"
+app = FastAPI()
+app.mount("/static", StaticFiles(directory=path+"static"), name="static")
+app.mount("/images", StaticFiles(directory=path+"images"), name="images")
 
+# load model
+model = pickle.load(open(path + "../models/20201116/model.p","rb"))
+features = pickle.load(open(path + "../models/20201116/features.p","rb"))
+preprocessor = pickle.load(open(path + "../models/20201116/cat_encoder.p","rb"))
 catfeat_map = dict(
     partime = {"a tempo pieno": 1, "part-time": 2},
     contratto = {"a tempo indeterminato" : 1.0, "a tempo determinato" : 2.0, "di lavoro interinale" : 3.0, "non specificato" : None},
@@ -31,15 +38,6 @@ catfeat_map = dict(
     ampiezza_comune = {"fino a 5.000 abitanti" : 1, "5.000-20.000 abitanti" : 2, "20.000-50.000 abitanti" : 3, "50.000-200.000 abitanti" : 4, "oltre 200.000 abitanti" : 5, }
 )
 
-path = os.path.dirname(os.path.abspath(__file__)) + "/"
-app = FastAPI()
-app.mount("/static", StaticFiles(directory=path+"static"), name="static")
-app.mount("/images", StaticFiles(directory=path+"images"), name="images")
-
-
-model = pickle.load(open(path + "../models/20201116/model.p","rb"))
-features = pickle.load(open(path + "../models/20201116/features.p","rb"))
-preprocessor = pickle.load(open(path + "../models/20201116/cat_encoder.p","rb"))
 
 @app.route('/')
 async def homepage(request):
@@ -61,40 +59,27 @@ async def predict(request):
     mu,sigma = model.predict_parameters(x)
     mu = mu.item()
     sigma = sigma.item()
-    fig = show_normal(mu,sigma)
+    fig,lower,upper = show_normal(mu,sigma,y_unit = model.y_unit)
+    fig.savefig(path + "images/distribution.png",facecolor="black")
+
     pred = mu * model.y_unit
-    fig_stream = get_figure(mu,sigma)
 
     return JSONResponse({
         "prediction" : np.round(pred),
         "monthly_prediction" : np.round(pred/12),
-        "mu" : mu,
-        "sigma": sigma,
-        #"fig_stream":fig_stream, # Object of type StreamingResponse is not JSON serializable
+        "lower_bound" : np.round(lower),
+        "upper_bound": np.round(upper),
     })
-
-
-#@app.route("/vector_image", methods=['POST'])
-def get_figure(mu,sigma):
-
-    print(mu,sigma)
-    fig = show_normal(mu,sigma)
-    buf = io.BytesIO()
-    fig.savefig(buf, format = 'png')
-    return StreamingResponse(buf, media_type="image/png")
-
+    
 
 def show_normal(mu,sigma,perc = .75,y_unit = 1000):
     # set x and y
     x = np.linspace(mu - 3*sigma, mu + 3*sigma, 100)
     y = stats.norm.pdf(x, mu, sigma)
-
-    perc = .75
     start,end = stats.norm.interval(perc,mu,sigma)
     x_int = np.linspace(start,end, 100)
     y_int = stats.norm.pdf(x_int, mu, sigma)
     ticks = [start,mu,end]
-
     # plot
     with plt.style.context('dark_background'):
         fig = plt.figure(figsize = (12,6))
@@ -115,5 +100,6 @@ def show_normal(mu,sigma,perc = .75,y_unit = 1000):
         plt.yticks([])
         plt.ylim(0,density_mu*1.4)
         plt.xlim(mu - 3*sigma, mu + 3*sigma)
+        #plt.tight_layout()
         plt.title("Salario netto annuale [stima]",size = 30)
-    return fig
+    return fig,start * y_unit,end * y_unit
