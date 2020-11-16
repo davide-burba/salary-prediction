@@ -1,4 +1,3 @@
-import mlflow
 import pandas as pd
 import numpy as np
 import lightgbm as lgb
@@ -8,6 +7,7 @@ from sklearn.model_selection import KFold
 from copy import deepcopy
 import matplotlib.pyplot as plt
 import matplotlib; matplotlib.use('Agg')
+import mlflow
 
 # local
 from utils import log_image_artifact
