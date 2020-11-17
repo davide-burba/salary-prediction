@@ -15,7 +15,8 @@ ROOT = os.getcwd() +  "/../"
 sys.path.insert(0,ROOT + "src/")
 
 from data_management import DataLoader, CatEncoder
-from models import LightGBM, ProbNN
+from model_lightgbm import LightGBM
+from model_probnn import ProbNN
 from utils import log_pickle_artifact
 
 

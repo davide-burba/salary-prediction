@@ -1,10 +1,8 @@
 import pandas as pd
 import numpy as np
-import lightgbm as lgb
-
-try:
-    import torch
-    from torch import nn
+import torch
+from torch import nn
+try:    
     from sklearn.model_selection import KFold
     from copy import deepcopy
     import matplotlib.pyplot as plt
@@ -15,101 +13,7 @@ try:
 except:
     Warning("lightgbm inference mode")
 
-
-class BaseModel:
-    def fit(self,X,y,X_valid=None,y_valid=None):
-        pass
-    def predict(self,X):
-        pass
-    def cross_validate(self,X,y,n_splits=5,random_state=None):
-
-        mape,mae = [],[]
-        median_ape,median_ae = [],[]
-        folds = KFold(n_splits,shuffle=True, random_state=random_state)
-        for idx_train,idx_valid in folds.split(X,y):
-            # split
-            X_train,X_valid = X.loc[idx_train],X.loc[idx_valid]
-            y_train,y_valid = y[idx_train],y[idx_valid]
-            # fit
-            self.fit(X_train,y_train,
-                     X_valid,y_valid) # for monitoring
-            # predict
-            y_pred = self.predict(X_valid)
-            # evaluate
-            mae.append(np.abs(y_pred - y_valid).mean())
-            mape.append(np.abs((y_pred - y_valid) / y_valid).mean())
-            median_ae_train = np.median(np.abs(y_pred - y_valid))
-            median_ape_train = np.median(np.abs((y_pred - y_valid) / y_valid))
-        scores = dict(
-            mape_mean = np.mean(mape),
-            mae_mean = np.mean(mae),
-            median_ae_train_mean = np.mean(median_ae_train),
-            median_ape_train_mean = np.mean(median_ape_train),
-            mape_std = np.std(mape),
-            mae_std = np.std(mae),
-            median_ae_train_std = np.std(median_ae_train),
-            median_ape_train_std = np.std(median_ape_train)
-            )
-
-        artifacts = dict()
-        return scores, artifacts
-
-    def log_artifacts(self,artifacts):
-        pass
-        
-
-class Baseline(BaseModel):
-    def fit(self,X,y):
-        self.median = np.median(y)
-    def predict(self,X):
-        return np.repeat(self.median,len(X))
-    def cross_validate(self,X,y):
-        data = lgb.Dataset(X,y,free_raw_data=False)
-        scores = lgb.cv(self.params,data,stratified=False)
-        return scores
-
-
-class LightGBM(BaseModel):
-    def __init__(self,params):
-        self.params = params
-
-    def fit(self,X,y,X_valid=None,y_valid=None):
-        data = lgb.Dataset(X,y,free_raw_data=False)
-        self.engine = lgb.train(self.params,data)
-
-    def predict(self,X):
-        ypred = self.engine.predict(X)
-        return ypred
-
-    def cross_validate(self,X,y,n_splits=5,random_state=None):
-        folds = KFold(n_splits,shuffle=True, random_state=random_state)
-        data = lgb.Dataset(X,y,free_raw_data=False)
-        artifacts = lgb.cv(
-            self.params,
-            data,
-            folds = folds,
-            metrics = ["mape","mae"],
-            return_cvbooster = True)
-
-        scores = dict(
-            mape = np.mean(artifacts['mape-mean']),
-            mae = np.mean(artifacts['l1-mean']),
-            mape_std = np.std(artifacts['mape-stdv']),
-            mae_std = np.std(artifacts['l1-stdv']))
-
-        return scores,artifacts
-
-    def log_artifacts(self,artifacts):
-        for k in ['mape-mean', 'l1-mean', 'mape-stdv', 'l1-stdv']:
-            for step,v in enumerate(artifacts[k]):
-                mlflow.log_metric("boosting_{}".format(k),v,step)
-
-        all_bst = artifacts["cvbooster"].boosters
-
-        for fold,bst in enumerate(all_bst):
-            plt.ioff()
-            lgb.plot_importance(bst)
-            log_image_artifact("feat_importance-{}.png".format(fold),"feat_importance")
+from model_base import BaseModel
 
 
 class ExpActivation(nn.Module):
