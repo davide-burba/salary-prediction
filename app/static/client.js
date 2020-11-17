@@ -17,7 +17,7 @@ function predict() {
       var img = document.getElementById("ImgDistribution");
       img.src = "images/distribution.png"
       var response = JSON.parse(e.target.responseText);
-      el("result").innerHTML = `STIME<br><br> Salario netto annuale: ${response["prediction"]} \u20AC <br><br> Incertezza: Il 75% delle volte il salario è compreso tra ${response["lower_bound"]} \u20AC e ${response["upper_bound"]} \u20AC`;
+      el("result").innerHTML = `STIME<br><br> Salario netto annuale: ${response["prediction"]} \u20AC <br><br> Incertezza: Il 75% delle volte è compreso tra ${response["lower_bound"]} \u20AC e ${response["upper_bound"]} \u20AC`;
     }
     el("predict-button").innerHTML = "Valuta";
   };
