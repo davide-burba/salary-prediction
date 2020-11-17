@@ -9,11 +9,10 @@ try:
     import matplotlib.pyplot as plt
     import matplotlib; matplotlib.use('Agg')
     import mlflow
+    # local
+    from utils import log_image_artifact
 except:
     Warning("torch inference mode")
-
-# local
-from utils import log_image_artifact
 
 
 class BaseModel:
