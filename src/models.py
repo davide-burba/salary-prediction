@@ -1,13 +1,16 @@
 import pandas as pd
 import numpy as np
-import lightgbm as lgb
 import torch
 from torch import nn
-from sklearn.model_selection import KFold
-from copy import deepcopy
-import matplotlib.pyplot as plt
-import matplotlib; matplotlib.use('Agg')
-import mlflow
+try:
+    import lightgbm as lgb
+    from sklearn.model_selection import KFold
+    from copy import deepcopy
+    import matplotlib.pyplot as plt
+    import matplotlib; matplotlib.use('Agg')
+    import mlflow
+except:
+    Warning("torch inference mode")
 
 # local
 from utils import log_image_artifact
