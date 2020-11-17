@@ -54,7 +54,7 @@ SELECT{
   filter: blur(4px);
   -webkit-filter: blur(4px) brightness(50%);
 
-  height: 1900px;
+  height: 3000px;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
