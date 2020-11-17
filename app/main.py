@@ -25,6 +25,7 @@ app.mount("/images", StaticFiles(directory=path+"images"), name="images")
 
 # load model
 model = pickle.load(open(path + "../models/{}/model.p".format(MODEL),"rb"))
+model_lightgbm = pickle.load(open(path + "../models/lightgbm/model.p","rb"))
 features = pickle.load(open(path + "../models/{}/features.p".format(MODEL),"rb"))
 preprocessor = pickle.load(open(path + "../models/{}/cat_encoder.p".format(MODEL),"rb"))
 catfeat_map = dict(
@@ -67,6 +68,11 @@ async def predict(request):
         mu,sigma = model.predict_parameters(x)
         mu = mu.item()
         sigma = sigma.item()
+
+        # tmp: use lightgbm prediction for mean
+        pred = model_lightgbm.predict(x).item()
+        mu = pred / model.y_unit
+
         fig,lower,upper = show_normal(mu,sigma,y_unit = model.y_unit)
         fig.savefig(path + "images/distribution.png",facecolor="black")
         pred = mu * model.y_unit

@@ -1,4 +1,4 @@
-#lightgbm
+lightgbm
 aiofiles
 python-multipart
 fastapi==0.55.1
