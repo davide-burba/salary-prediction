@@ -3,16 +3,16 @@
 experiment : "debug/"
 run_name : null
 tags : {}
-store_artifacts : True
+store_artifacts : False
 
 # what to do 
-action : train_model
+action : cross_validate
 
 # data parameters
 data_args : 
   features: [
     # contract
-    'contratto', # 'ore_settimana',
+    'contratto', 'ore_settimana',
     # job
     'dimensioni_azienda', 'settore',  'qualifica',
     # study
@@ -20,9 +20,9 @@ data_args :
     # where
     'regione', 'ampiezza_comune',
     # history
-    # 'anni_da_primo_lavoro', 'anni_da_lavoro_corrente', 'anni_da_edu','anni_contributi', 'n_esp_lavorative', 
+    'anni_da_primo_lavoro', 'anni_da_lavoro_corrente', 'anni_da_edu','anni_contributi', 'n_esp_lavorative', 
     ]
-  alpha : 0.05
+  alpha : 0.01
 
 # model parameters
 model : ProbNN

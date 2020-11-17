@@ -1,0 +1,38 @@
+action: cross_validate
+cv_state: 1234
+data_args:
+  alpha: 0.01
+  features:
+  - contratto
+  - ore_settimana
+  - dimensioni_azienda
+  - settore
+  - qualifica
+  - titolo_studio
+  - tipo_laurea
+  - tipo_diploma
+  - regione
+  - ampiezza_comune
+  - anni_da_primo_lavoro
+  - anni_da_lavoro_corrente
+  - anni_da_edu
+  - anni_contributi
+  - n_esp_lavorative
+experiment: hparam_search
+model: ProbNN
+model_args:
+  batch_size: 256
+  distr: normal
+  dropout: 0.3
+  embedding_size: 16
+  epochs: 25
+  lr: 0.01
+  num_nodes:
+  - 32
+  - 32
+  - 32
+n_splits: 5
+random_state: 1234
+run_name: probnn_045
+store_artifacts: false
+tags: {}

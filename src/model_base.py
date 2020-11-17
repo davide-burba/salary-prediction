@@ -28,17 +28,17 @@ class BaseModel:
             # evaluate
             mae.append(np.abs(y_pred - y_valid).mean())
             mape.append(np.abs((y_pred - y_valid) / y_valid).mean())
-            median_ae_train = np.median(np.abs(y_pred - y_valid))
-            median_ape_train = np.median(np.abs((y_pred - y_valid) / y_valid))
+            median_ae = np.median(np.abs(y_pred - y_valid))
+            median_ape = np.median(np.abs((y_pred - y_valid) / y_valid))
         scores = dict(
             mape_mean = np.mean(mape),
             mae_mean = np.mean(mae),
-            median_ae_train_mean = np.mean(median_ae_train),
-            median_ape_train_mean = np.mean(median_ape_train),
+            median_ae_mean = np.mean(median_ae),
+            median_ape_mean = np.mean(median_ape),
             mape_std = np.std(mape),
             mae_std = np.std(mae),
-            median_ae_train_std = np.std(median_ae_train),
-            median_ape_train_std = np.std(median_ape_train)
+            median_ae_std = np.std(median_ae),
+            median_ape_std = np.std(median_ape)
             )
 
         artifacts = dict()

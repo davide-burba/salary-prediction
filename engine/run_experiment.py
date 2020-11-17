@@ -21,12 +21,13 @@ from utils import log_pickle_artifact
 
 
 DEFAULT_ARGS = dict(
-    path_dir = "debug/",
-    path_pattern = "",
+    #path_dir = "debug/",
+    #path_pattern = "",
     store_artifacts = False,
     random_state = 1234,
     cv_state = 1234,
     n_splits=5,
+    tags = dict(),
 )
 
 
