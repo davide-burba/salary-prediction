@@ -16,15 +16,17 @@ import sys
 import io
 sys.path.insert(0,"src/")
 
+MODEL = "probnn"
+
 path = os.path.dirname(os.path.abspath(__file__)) + "/"
 app = FastAPI()
 app.mount("/static", StaticFiles(directory=path+"static"), name="static")
 app.mount("/images", StaticFiles(directory=path+"images"), name="images")
 
 # load model
-model = pickle.load(open(path + "../models/20201116/model.p","rb"))
-features = pickle.load(open(path + "../models/20201116/features.p","rb"))
-preprocessor = pickle.load(open(path + "../models/20201116/cat_encoder.p","rb"))
+model = pickle.load(open(path + "../models/{}/model.p".format(MODEL),"rb"))
+features = pickle.load(open(path + "../models/{}/features.p".format(MODEL),"rb"))
+preprocessor = pickle.load(open(path + "../models/{}/cat_encoder.p".format(MODEL),"rb"))
 catfeat_map = dict(
     #partime = {"a tempo pieno": 1, "part-time": 2},
     contratto = {"a tempo indeterminato" : 1, "a tempo determinato" : 2, "di lavoro interinale" : 3, "non specificato" : None},
@@ -58,51 +60,61 @@ async def predict(request):
             x[f] = float(x[f])
     x = pd.DataFrame(x, index=[0])
     x = preprocessor.transform(x)
-    # predict
-    # mu,sigma = model.predict_parameters(x)
-    # mu = mu.item()
-    # sigma = sigma.item()
-    # fig,lower,upper = show_normal(mu,sigma,y_unit = model.y_unit)
-    # fig.savefig(path + "images/distribution.png",facecolor="black")
-    # pred = mu * model.y_unit
-    
-    pred = model.predict(x).item()
 
-    return JSONResponse({
-        "prediction" : np.round(pred),
-        "monthly_prediction" : np.round(pred/12),
-        # "lower_bound" : np.round(lower),
-        # "upper_bound": np.round(upper),
-    })
+    # ----- PROBNN -----
+    if MODEL == "probnn":
+        predict
+        mu,sigma = model.predict_parameters(x)
+        mu = mu.item()
+        sigma = sigma.item()
+        fig,lower,upper = show_normal(mu,sigma,y_unit = model.y_unit)
+        fig.savefig(path + "images/distribution.png",facecolor="black")
+        pred = mu * model.y_unit
+
+        return JSONResponse({
+            "prediction" : "{:,}€".format(int(np.round(pred))).replace(",","."),#np.round(pred),
+            "monthly_prediction" : "{:,}€".format(int(np.round(pred/12))).replace(",","."),#np.round(pred/12),
+            "lower_bound" : "{:,}€".format(int(np.round(lower))).replace(",","."),# np.round(lower),
+            "upper_bound": "{:,}€".format(int(np.round(upper))).replace(",","."),#np.round(upper),
+        })
+    # ----- LIGHTGBM -----
+    elif MODEL == "lightgbm":
+        pred = model.predict(x).item()
+        return JSONResponse({
+            "prediction" : "{:,}€".format(int(np.round(pred))).replace(",","."),#np.round(pred),
+            "monthly_prediction" : "{:,}€".format(int(np.round(pred/12))).replace(",","."),#np.round(pred/12),
+        })
+    else:
+        raise ValueError
     
 
-# def show_normal(mu,sigma,perc = .75,y_unit = 1000):
-#     # set x and y
-#     x = np.linspace(mu - 3*sigma, mu + 3*sigma, 100)
-#     y = stats.norm.pdf(x, mu, sigma)
-#     start,end = stats.norm.interval(perc,mu,sigma)
-#     x_int = np.linspace(start,end, 100)
-#     y_int = stats.norm.pdf(x_int, mu, sigma)
-#     ticks = [start,mu,end]
-#     # plot
-#     with plt.style.context('dark_background'):
-#         fig = plt.figure(figsize = (12,6))
-#         plt.fill_between(x,y, color = "C0", alpha = .5)
-#         plt.fill_between(x_int,y_int, label = "75%", color = "C0", alpha=.8)
-#         density_mu = stats.norm.pdf(mu, mu, sigma)
-#         plt.text(mu,density_mu * .3,
-#                  "  {}%".format(int(100*perc)),
-#                  size = 40,
-#                  horizontalalignment='center',
-#                  color = "gray")
-#         plt.text(mu,density_mu*1.08,
-#                  "{:,}€".format(int((mu * y_unit))).replace(",","."),
-#                  size = 70,
-#                  horizontalalignment='center',
-#                  color = "C3")
-#         plt.xticks(ticks,["{:,}€".format(int((v * y_unit))).replace(",",".") for v in ticks],size=25)
-#         plt.yticks([])
-#         plt.ylim(0,density_mu*1.4)
-#         plt.xlim(mu - 3*sigma, mu + 3*sigma)
-#         plt.title("Salario netto annuale [stima]",size = 30)
-#     return fig,start * y_unit,end * y_unit
+def show_normal(mu,sigma,perc = .75,y_unit = 1000):
+    # set x and y
+    x = np.linspace(mu - 3*sigma, mu + 3*sigma, 100)
+    y = stats.norm.pdf(x, mu, sigma)
+    start,end = stats.norm.interval(perc,mu,sigma)
+    x_int = np.linspace(start,end, 100)
+    y_int = stats.norm.pdf(x_int, mu, sigma)
+    ticks = [start,mu,end]
+    # plot
+    with plt.style.context('dark_background'):
+        fig = plt.figure(figsize = (12,6))
+        plt.fill_between(x,y, color = "C0", alpha = .5)
+        plt.fill_between(x_int,y_int, label = "75%", color = "C0", alpha=.8)
+        density_mu = stats.norm.pdf(mu, mu, sigma)
+        plt.text(mu,density_mu * .3,
+                 "  {}%".format(int(100*perc)),
+                 size = 40,
+                 horizontalalignment='center',
+                 color = "gray")
+        plt.text(mu,density_mu*1.08,
+                 "{:,}€".format(int(np.round(((mu * y_unit))))).replace(",","."),
+                 size = 70,
+                 horizontalalignment='center',
+                 color = "C3")
+        plt.xticks(ticks,["{:,}€".format(int(np.round((v * y_unit)))).replace(",",".") for v in ticks],size=25)
+        plt.yticks([])
+        plt.ylim(0,density_mu*1.4)
+        plt.xlim(mu - 3*sigma, mu + 3*sigma)
+        plt.title("Salario netto annuale [stima]",size = 30)
+    return fig,start * y_unit,end * y_unit

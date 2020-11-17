@@ -14,10 +14,13 @@ function predict() {
   };
   xhr.onload = function(e) {
     if (this.readyState === 4) {
-      // var img = document.getElementById("ImgDistribution");
-      // img.src = "images/distribution.png"
       var response = JSON.parse(e.target.responseText);
-      el("result").innerHTML = `Salario netto annuale [stima]: ${response["prediction"]} \u20AC`;
+      //  ----- PROBNN ----- 
+      var img = document.getElementById("ImgDistribution");
+      img.src = "images/distribution.png"
+      el("result").innerHTML = `<br> Salario netto annuale: <p style="color:red;font-size:80px">${response["prediction"]}</p> Range [75%]: <p style="color:red;">${response["lower_bound"]} - ${response["upper_bound"]}</p> Distribuzione:`;
+      // ----- LightGBM ----- 
+      // el("result").innerHTML = `Salario netto annuale [stima]: ${response["prediction"]}`;
     }
     el("predict-button").innerHTML = "Valuta";
   };
