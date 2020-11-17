@@ -27,7 +27,7 @@ features = pickle.load(open(path + "../models/20201116/features.p","rb"))
 preprocessor = pickle.load(open(path + "../models/20201116/cat_encoder.p","rb"))
 catfeat_map = dict(
     #partime = {"a tempo pieno": 1, "part-time": 2},
-    contratto = {"a tempo indeterminato" : 1.0, "a tempo determinato" : 2.0, "di lavoro interinale" : 3.0, "non specificato" : None},
+    contratto = {"a tempo indeterminato" : 1, "a tempo determinato" : 2, "di lavoro interinale" : 3, "non specificato" : None},
     dimensioni_azienda = {"fino a 4 addetti": 1, "tra 5 e 15 addetti": 2, "tra 16 e 19 addetti": 3, "tra 20 e 49 addetti": 4, "tra 50 e 99 addetti": 5, "tra 100 e 499 addetti": 6, "500 addetti ed oltre": 7, "Pubblica Amministrazione": 8, "non specificato":  None},
     titolo_studio = {"nessuno" : 1,"licenza elementare" : 2,"licenza media inferiore" : 3,"diploma professionale (3 anni)" : 4,"diploma media superiore" : 5,"diploma universitario/laurea triennale" : 6,"laurea/laurea magistrale" : 7,"specializzazione post-laurea" : 8},
     tipo_laurea = {"matematica, fisica, chimica, biologia, scienze, farmacia" : 1,"scienze agrarie e veterinaria" : 2,"medicina e odontoiatria" : 3,"ingegneria" : 4,"architettura e urbanistica" : 5,"economia e statistica" : 6,"scienze politiche, sociologia" : 7,"giurisprudenza" : 8,"lettere, filosofia, lingue, pedagogia, psicologia" : 9,"altro" : 10,"non laureato" : None,},
@@ -51,54 +51,58 @@ async def predict(request):
     tmp = await request.form()
     x = {f : tmp[f] for f in features}
     # format
-    for f in catfeat_map: 
-        x[f] = catfeat_map[f][x[f]]
-    x = pd.DataFrame(x, index=[0])     
+    for f in features:
+        if f in catfeat_map: 
+            x[f] = catfeat_map[f][x[f]]
+        else:
+            x[f] = float(x[f])
+    x = pd.DataFrame(x, index=[0])
     x = preprocessor.transform(x)
     # predict
-    mu,sigma = model.predict_parameters(x)
-    mu = mu.item()
-    sigma = sigma.item()
-    fig,lower,upper = show_normal(mu,sigma,y_unit = model.y_unit)
-    fig.savefig(path + "images/distribution.png",facecolor="black")
-
-    pred = mu * model.y_unit
+    # mu,sigma = model.predict_parameters(x)
+    # mu = mu.item()
+    # sigma = sigma.item()
+    # fig,lower,upper = show_normal(mu,sigma,y_unit = model.y_unit)
+    # fig.savefig(path + "images/distribution.png",facecolor="black")
+    # pred = mu * model.y_unit
+    
+    pred = model.predict(x).item()
 
     return JSONResponse({
         "prediction" : np.round(pred),
         "monthly_prediction" : np.round(pred/12),
-        "lower_bound" : np.round(lower),
-        "upper_bound": np.round(upper),
+        # "lower_bound" : np.round(lower),
+        # "upper_bound": np.round(upper),
     })
     
 
-def show_normal(mu,sigma,perc = .75,y_unit = 1000):
-    # set x and y
-    x = np.linspace(mu - 3*sigma, mu + 3*sigma, 100)
-    y = stats.norm.pdf(x, mu, sigma)
-    start,end = stats.norm.interval(perc,mu,sigma)
-    x_int = np.linspace(start,end, 100)
-    y_int = stats.norm.pdf(x_int, mu, sigma)
-    ticks = [start,mu,end]
-    # plot
-    with plt.style.context('dark_background'):
-        fig = plt.figure(figsize = (12,6))
-        plt.fill_between(x,y, color = "C0", alpha = .5)
-        plt.fill_between(x_int,y_int, label = "75%", color = "C0", alpha=.8)
-        density_mu = stats.norm.pdf(mu, mu, sigma)
-        plt.text(mu,density_mu * .3,
-                 "  {}%".format(int(100*perc)),
-                 size = 40,
-                 horizontalalignment='center',
-                 color = "gray")
-        plt.text(mu,density_mu*1.08,
-                 "{:,}€".format(int((mu * y_unit))).replace(",","."),
-                 size = 70,
-                 horizontalalignment='center',
-                 color = "C3")
-        plt.xticks(ticks,["{:,}€".format(int((v * y_unit))).replace(",",".") for v in ticks],size=25)
-        plt.yticks([])
-        plt.ylim(0,density_mu*1.4)
-        plt.xlim(mu - 3*sigma, mu + 3*sigma)
-        plt.title("Salario netto annuale [stima]",size = 30)
-    return fig,start * y_unit,end * y_unit
+# def show_normal(mu,sigma,perc = .75,y_unit = 1000):
+#     # set x and y
+#     x = np.linspace(mu - 3*sigma, mu + 3*sigma, 100)
+#     y = stats.norm.pdf(x, mu, sigma)
+#     start,end = stats.norm.interval(perc,mu,sigma)
+#     x_int = np.linspace(start,end, 100)
+#     y_int = stats.norm.pdf(x_int, mu, sigma)
+#     ticks = [start,mu,end]
+#     # plot
+#     with plt.style.context('dark_background'):
+#         fig = plt.figure(figsize = (12,6))
+#         plt.fill_between(x,y, color = "C0", alpha = .5)
+#         plt.fill_between(x_int,y_int, label = "75%", color = "C0", alpha=.8)
+#         density_mu = stats.norm.pdf(mu, mu, sigma)
+#         plt.text(mu,density_mu * .3,
+#                  "  {}%".format(int(100*perc)),
+#                  size = 40,
+#                  horizontalalignment='center',
+#                  color = "gray")
+#         plt.text(mu,density_mu*1.08,
+#                  "{:,}€".format(int((mu * y_unit))).replace(",","."),
+#                  size = 70,
+#                  horizontalalignment='center',
+#                  color = "C3")
+#         plt.xticks(ticks,["{:,}€".format(int((v * y_unit))).replace(",",".") for v in ticks],size=25)
+#         plt.yticks([])
+#         plt.ylim(0,density_mu*1.4)
+#         plt.xlim(mu - 3*sigma, mu + 3*sigma)
+#         plt.title("Salario netto annuale [stima]",size = 30)
+#     return fig,start * y_unit,end * y_unit

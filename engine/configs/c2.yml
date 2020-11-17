@@ -3,18 +3,18 @@
 experiment : "feat_sel/"
 run_name : null
 tags : {}
-store_artifacts : True
+store_artifacts : true
 
 # what to do 
-action : cross_validate
+action : train_model
 
 # data parameters
 data_args : 
   features: [
     # contract
-    'partime', 'contratto', 'ore_settimana', 
+    'contratto', 'ore_settimana',
     # job
-    'dimensioni_azienda', 'settore',  'qualifica', #'status_lavoratore', #'codice_lavoro_isco',  ## 'settore_less',  
+    'dimensioni_azienda', 'settore',  'qualifica', 
     # study
     'titolo_studio', 'tipo_laurea','tipo_diploma', #  'selode', 'voto_perc',
     # where

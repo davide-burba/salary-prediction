@@ -13,8 +13,7 @@ ALL_FEATURES = [
     'anni_da_primo_lavoro', 'anni_da_lavoro_corrente', 'voto_perc']
 NUMERIC = [
     'reddito_netto','ore_settimana','anni_da_edu','ETA','voto_perc',
-    "n_esp_lavorative","anni_contributi", "eta_primo_lavoro",
-    "anni_da_lavoro_corrente"]
+    "anni_da_primo_lavoro", "anni_da_lavoro_corrente"]
 CATEGORICAL = [v for v in ALL_FEATURES if v not in NUMERIC]
 
 
@@ -79,7 +78,7 @@ class CatEncoder:
         return self.transform(X)
 
     def transform(self,X):
-        x_cat = self.encoder.fit_transform(X[X.columns[:self.n_categorical]])
+        x_cat = self.encoder.transform(X[X.columns[:self.n_categorical]])
         X[X.columns[:self.n_categorical]] = x_cat
         X[X.columns[:self.n_categorical]] = X[X.columns[:self.n_categorical]].astype("category")
         return X

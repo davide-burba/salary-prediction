@@ -12,17 +12,15 @@ action : train_model
 data_args : 
   features: [
     # contract
-    'contratto', 'ore_settimana', # 'partime',  
+    'contratto', # 'ore_settimana',
     # job
-    'dimensioni_azienda', 'settore',  'qualifica', #'status_lavoratore', #'codice_lavoro_isco',  ## 'settore_less',  
+    'dimensioni_azienda', 'settore',  'qualifica',
     # study
-    'titolo_studio', 'tipo_laurea','tipo_diploma', #  'selode', 'voto_perc',
+    'titolo_studio', 'tipo_laurea','tipo_diploma',
     # where
-    'regione', 'ampiezza_comune', # ,'zona_less', 'zona', 'ampiezza_comune_less',
+    'regione', 'ampiezza_comune',
     # history
-    'anni_da_primo_lavoro', 'anni_da_lavoro_corrente', 'anni_da_edu','anni_contributi', 'n_esp_lavorative', 
-    # discarded
-    #'cit_italiana', 'sex','eta_discreta_5','ETA',
+    # 'anni_da_primo_lavoro', 'anni_da_lavoro_corrente', 'anni_da_edu','anni_contributi', 'n_esp_lavorative', 
     ]
   alpha : 0.05
 

@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
-import torch
-from torch import nn
+import lightgbm as lgb
+
 try:
-    import lightgbm as lgb
+    import torch
+    from torch import nn
     from sklearn.model_selection import KFold
     from copy import deepcopy
     import matplotlib.pyplot as plt
@@ -12,7 +13,7 @@ try:
     # local
     from utils import log_image_artifact
 except:
-    Warning("torch inference mode")
+    Warning("lightgbm inference mode")
 
 
 class BaseModel:
@@ -77,7 +78,7 @@ class LightGBM(BaseModel):
         self.engine = lgb.train(self.params,data)
 
     def predict(self,X):
-        ypred = self.engine.predict(data)
+        ypred = self.engine.predict(X)
         return ypred
 
     def cross_validate(self,X,y,n_splits=5,random_state=None):
