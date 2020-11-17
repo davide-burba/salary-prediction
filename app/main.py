@@ -38,8 +38,6 @@ catfeat_map = dict(
     ampiezza_comune = {"fino a 5.000 abitanti" : 1, "5.000-20.000 abitanti" : 2, "20.000-50.000 abitanti" : 3, "50.000-200.000 abitanti" : 4, "oltre 200.000 abitanti" : 5, }
 )
 
-print(features)
-
 
 @app.route('/')
 async def homepage(request):
