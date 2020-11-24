@@ -8,4 +8,5 @@ cd engine
 python run_experiment.py --config=path/to/config/file.yml
 ```
 
+You can generate multiple config files using the notebook ```engine/generate_run_file.ipynb```.
 
