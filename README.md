@@ -1,6 +1,6 @@
 # salary prediction
 
-A probabilistic model to estimate salary expectation for the Italian market. Try it [here](https://smartsalarypredictor-italy.herokuapp.com)!
+A probabilistic model to estimate salary expectation for the Italian market. Try it [here](https://smartsalarypredictor-italy.herokuapp.com)! (Stopped ATM)
 
 To train or cross-validate a model: 
 ```
